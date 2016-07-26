@@ -1,0 +1,352 @@
+<html>
+
+<head>
+    <link href="style.css" rel="stylesheet" type="text/css">
+    <script type="text/javascript" src="https://code.jquery.com/jquery-1.10.2.js"></script>
+    <script src="rangeslider.js-2.1.1/rangeslider.min.js"></script>
+</head>
+
+<body>
+    <div id="emergencyFundWrapper">
+        <table id="sliderTable">
+            <tr>
+                <td colspan="3">
+                    <h2>Emergency Fund Calculator</h2>
+                    <p>An emergency fund is a "safety net" fund that you can use for emergencys (such as unemployment, unseen bills, etc.). You want your emergency fund to be at least 3 months of your usual expenses. You might even want to have 6 months of expenses to be fully prepared.</p>
+                </td>
+            </tr>
+            <tr>
+                <td>Total Monthly Expenses</td>
+                <td><input type="text" name="monthlyExpenses" id="monthlyExpense" value="0"></td>
+                <td><input type="range" id="monthlyExpenseSlider" value="0" min="0" max="5000"></td>
+            </tr>
+            <tr>
+                <td>Currently Saved</td>
+                <td><input type="text" name="currentlySaved" id="currentlySaved" value="0"></td>
+                <td><input type="range" id="currentlySavedSlider" min="0" max="10000" value="0"></td>
+            </tr>
+            <tr>
+                <td>What are you currently saving each month?</td>
+                <td><input type="text" name="savingAmount" id="savingAmount" value="0"></td>
+                <td><input type="range" id="savingAmountSlider" min="0" max="1000" value="0"></td>
+            </tr>
+            <tr>
+                <td>How much do you want to save monthly?</td>
+                <td><input type="text" name="amountGoal" id="amountGoal" value="0"></td>
+                <td><input type="range" id="amountGoalSlider" value="0" min="0" max="1000"></td>
+            </tr>
+            <tr>
+                <td id="blank">or</td>
+            </tr>
+            <tr>
+                <td>How many months would you like to save?</td>
+                <td><input type="text" name="timeGoal" id="timeGoal" value="0"></td>
+                <td><input class="rangeslider" type="range" id="timeGoalSlider" value="0" min="0" max="24"></td>
+            </tr>
+        </table>
+
+        <button id="calculate">Calculate</button>
+
+        <div id="resultsWrapper">
+			<h2>Overview</h2> 
+            <div id="normalCase">
+	            Your total amount needed is $<div id="amountNeeded"></div> for three months and $<div id="amountNeeded6"></div> 
+	            for six months. 
+	            <div id="amountSavedWrapper">Since you already have $<div id="amountSaved"></div> saved. You only have $<div id="amountLeftFor3"></div> left to save for 3 months, and<br>
+	            $<div id="amountLeftFor6"></div> for 6 months. </div>
+	            <div id="forTime">At the pace of $<div id="perMonthFor3"></div> per month it will be <div id="amountOfMonthsFor3"></div> months until your emergency fund is filled for 3 months of funds.
+	                $<div id="perMonthFor6"></div> per month for <div id="amountOfMonthsFor6"></div> months will provide enough savings for 6 months of funds.
+	            </div>
+
+	            <div id="tableWrapper">
+	                <table cellpadding="0" cellspacing="0" id="totalAmountAndTime">
+	                    <tr>
+	                        <td></td>
+	                        <td class="heading">3 Months</td>
+	                        <td class="heading">6 Months</td>
+	                    </tr>
+	                    <tr>
+	                        <td class="heading">Total Time (Months)</td>
+	                        <td id="totalTimeFor3"></td>
+	                        <td id="totalTimeFor6"></td>
+	                    </tr>
+	                    <tr>
+	                        <td class="heading">Total Dollars (Per Month)</td>
+	                        <td id="totalAmountFor3"></td>
+	                        <td id="totalAmountFor6"></td>
+	                    </tr>
+	                </table>
+		            <div id="checklistWrapper">
+		                Checklist
+		                <ol>
+		                	<li>Yes</li>
+		                	<li>No</li>
+		                	<li>Maybe</li>
+		                </ol>
+		            </div>
+                	<h2>Your Savings Plan</h2>
+                	<div id="planHolder"></div>
+                	<div><a href="javascript:LifeCents.printForm('resultsWrapper')" class="print-link no-print">Print this form</a></div>
+		        </div>
+            </div>
+            <div id="alreadySaved">
+          		You already have $<div id="difference"></div> more than you need in your emergency fund. Maybe you should use this extra money for retirement savings.
+        	</div>
+        </div>
+        <div id="error">Please enter a value in either 'How much do you want to save monthly?' or 'How many months would you like to save?'.</div>
+    </div>
+
+    <iframe name="print_frame" height="0" width="0" border="none" style="display: none" src="./Src_files/saved_resource(1).html"></iframe>
+    
+	<script>
+        var $element = $('input[type="range"]');
+        var $handle;
+
+        $element
+            .rangeslider({
+                polyfill: false,
+                onInit: function() {
+                    $handle = $('.rangeslider__handle', this.$range);
+                }
+            })
+            .on('input', function() {
+                updateText($handle[0], this.value, this.getAttribute("id"));
+            });
+
+        function updateText(el, value, id) {
+            id = id.replace('Slider', '');
+            $("#" + id).val(value);
+        }
+
+        var button = document.getElementById("calculate");
+
+        button.addEventListener("click", function() 
+        {
+            var expenses = $('#monthlyExpense').val() * 3;
+            var amountSaved = $('#currentlySaved').val();
+            var amountNeeded = expenses - $('#currentlySaved').val();
+
+            if(amountSaved>expenses){
+            	$('#difference').text(amountSaved-expenses);
+            	$('#error').hide();
+            	$('#normalCase').hide();
+            	$('#alreadySaved').slideDown();
+            	$('#resultsWrapper').slideDown();
+            }
+            else{
+	            $('#amountNeeded').text(expenses);
+	            $('#amountNeeded6').text(expenses * 2);
+
+	            //Creates 'For 3 Months' Table on page
+	            $("#monthTable3").remove();
+	            var table3 = document.createElement("table");
+	            $table3 = $(table3);
+	            $table3.attr("id", "monthTable3");
+	            $table3.attr("cellspacing", "0");
+	            $table3.attr("cellpadding", "0");
+	            tableHeading = document.createElement("tr");
+	            tableHeadingTd = document.createElement("td");
+	            $tableHeadingTd = $(tableHeadingTd);
+	            $tableHeadingTd.attr("colspan", "3");
+	            $tableHeadingTd.attr("class", "title");
+	            $tableHeadingTd.text("For 3 Months");
+	            $(tableHeading).append(tableHeadingTd);
+	            tableRow = document.createElement("tr");
+	            tableMonth = document.createElement("td");
+	            $(tableMonth).text("Month");
+	            $(tableMonth).attr("class", "timeHeading");
+	            tableSaved = document.createElement("td");
+	            $(tableSaved).text("Amount Saved");
+	            $(tableSaved).attr("class", "timeHeading");
+	            tableLeft = document.createElement("td");
+	            $(tableLeft).text("Amount Left");
+	            $(tableLeft).attr("class", "timeHeading");
+	            $(table3).append(tableHeadingTd);
+	            $(tableRow).append(tableMonth);
+	            $(tableRow).append(tableSaved);
+	            $(tableRow).append(tableLeft);
+	            $(table3).append(tableRow);
+	            $("#planHolder").append(table3);
+
+	            //Creates 'For 6 Months' Table on page
+	            $("#monthTable6").remove();
+	            var table6 = document.createElement("table");
+	            $table6 = $(table6);
+	            $table6.attr("id", "monthTable6");
+	            $table6.attr("cellspacing", "0");
+	            $table6.attr("cellpadding", "0");
+	            tableHeading = document.createElement("tr");
+	            tableHeadingTd = document.createElement("td");
+	            $(tableHeadingTd).attr("colspan", "3");
+	            $(tableHeadingTd).text("For 6 Months");
+	            $(tableHeadingTd).attr("class", "title");
+	            $(tableHeading).append(tableHeadingTd);
+	            tableRow = document.createElement("tr");
+	            tableMonth = document.createElement("td");
+	            $(tableMonth).attr("class", "timeHeading");
+	            $(tableMonth).text("Month");
+	            tableSaved = document.createElement("td");
+	            $(tableSaved).attr("class", "timeHeading");
+	            $(tableSaved).text("Amount Saved");
+	            tableLeft = document.createElement("td");
+	            $(tableLeft).attr("class", "timeHeading");
+	            $(tableLeft).text("Amount Left");
+	            $(table6).append(tableHeadingTd);
+	            $(tableRow).append(tableMonth);
+	            $(tableRow).append(tableSaved);
+	            $(tableRow).append(tableLeft);
+	            $(table6).append(tableRow);
+	            $("#planHolder").append(table6);
+
+	            //If the input field of 'timeGoal' does not equal 0, and amountGoal does equal 0
+	            if (parseInt($('#timeGoal').val()) !== 0 && parseInt($('#amountGoal').val()) === 0) {
+	                var months = $('#timeGoal').val();
+
+	                $('#perMonthFor3').text(Math.ceil(amountNeeded / months));
+	                $('#perMonthFor3').text(Math.ceil(2 * amountNeeded / months));
+	                $('#amountOfMonthsFor3').text(months);
+	                $('#amountOfMonthsFor6').text(months);
+	                $("#totalTimeFor3").text(months);
+	                $("#totalTimeFor6").text(months);
+	                $("#totalAmountFor3").text("$" + Math.ceil(amountNeeded / months));
+	                $("#totalAmountFor6").text("$" + Math.ceil((2 * amountNeeded / months)));
+
+	                for (i = 0; i <= months; i++) {
+	                    tableRow = document.createElement("tr");
+	                    $tableRow = $(tableRow);
+	                    tableMonth = document.createElement("td");
+	                    $(tableMonth).attr("class", "month");
+	                    $(tableMonth).text(i);
+	                    tableSaved = document.createElement("td");
+	                    $(tableSaved).text("$" + parseInt((amountNeeded / months) * i));
+	                    if (i === parseInt(months)) $(tableSaved).text("$" + amountNeeded);
+	                    tableLeft = document.createElement("td");
+	                    $(tableLeft).text("$" + parseInt(amountNeeded - ((amountNeeded / months) * i)));
+	                    if (i === parseInt(months)) $(tableLeft).text("$0");
+	                    $tableRow.append(tableMonth);
+	                    $tableRow.append(tableSaved);
+	                    $tableRow.append(tableLeft);
+	                    $(table3).append(tableRow);
+	                }
+
+	                amountNeeded = amountNeeded * 2;
+
+	                for (i = 0; i <= months; i++) {
+	                    tableRow = document.createElement("tr");
+	                    $tableRow = $(tableRow);
+	                    tableMonth = document.createElement("td");
+	                    $(tableMonth).attr("class", "month");
+	                    $(tableMonth).text(i);
+	                    tableSaved = document.createElement("td");
+	                    $(tableSaved).text("$" + parseInt((amountNeeded / months) * i));
+	                    if (i === parseInt(months)) $(tableSaved).text(amountNeeded);
+	                    tableLeft = document.createElement("td");
+	                    $(tableLeft).text("$" + parseInt(amountNeeded - ((amountNeeded / months) * i)));
+	                    if (i === months) $(tableLeft).text("$0");
+	                    $tableRow.append(tableMonth);
+	                    $tableRow.append(tableSaved);
+	                    $tableRow.append(tableLeft);
+	                    $(table6).append(tableRow);
+	                }
+
+	                $('#error').slideUp();
+	                $('#alreadySaved').slideUp();
+	                $('#normalCase').slideDown();
+	                $('#resultsWrapper').slideDown();
+	            } 
+	            //Else if 'amountGoal' doesnt equal 0, and 'timeGoal' does equal 0
+	            else if (parseInt($('#amountGoal').val()) !== 0 && parseInt($('#timeGoal').val()) === 0) {
+	                var perMonth = $('#amountGoal').val();
+
+	                $('#perMonthFor3').text(perMonth);
+	                $('#perMonthFor6').text(perMonth);
+	                $('#amountOfMonthsFor3').text(Math.ceil(amountNeeded / perMonth));
+	                $('#amountOfMonthsFor6').text(Math.ceil(amountNeeded / perMonth * 2));
+	                $("#totalTimeFor3").text(Math.ceil(amountNeeded / perMonth));
+	                $("#totalTimeFor6").text(Math.ceil(amountNeeded / perMonth * 2));
+	                $("#totalAmountFor3").text("$" + Math.round(perMonth));
+	                $("#totalAmountFor6").text("$" + Math.round(perMonth));
+
+	                var months = $("#amountOfMonthsFor3").text();
+
+	                for (i = 0; i <= months; i++) {
+	                    tableRow = document.createElement("tr");
+	                    $tableRow = $(tableRow);
+	                    tableMonth = document.createElement("td");
+	                    $(tableMonth).attr("class", "month");
+	                    $(tableMonth).text(i);
+	                    tableSaved = document.createElement("td");
+	                    $(tableSaved).text("$" + parseInt(perMonth * i));
+	                    tableLeft = document.createElement("td");
+	                    $(tableLeft).text("$" + parseInt(amountNeeded - (perMonth * i)));
+	                    if (i === parseInt(months)) {
+	                        $(tableLeft).text("$0");
+	                        $(tableSaved).text("$" + amountNeeded);
+	                    }
+	                    $tableRow.append(tableMonth);
+	                    $tableRow.append(tableSaved);
+	                    $tableRow.append(tableLeft);
+	                    $(table3).append(tableRow);
+	                }
+
+	                var monthsFor6 = Math.ceil(amountNeeded / perMonth * 2);
+
+	                for (i = 0; i <= monthsFor6; i++) {
+	                    tableRow = document.createElement("tr");
+	                    $tableRow = $(tableRow);
+	                    tableMonth = document.createElement("td");
+	                    $(tableMonth).attr("class", "month");
+	                    $(tableMonth).text(i);
+	                    tableSaved = document.createElement("td");
+	                    $(tableSaved).text("$" + parseInt(perMonth * i));
+	                    tableLeft = document.createElement("td");
+	                    $(tableLeft).text("$" + parseInt((amountNeeded * 2) - (perMonth * i)));
+	                    if (i === monthsFor6) {
+	                        $(tableLeft).text("$0");
+	                        $(tableSaved).text("$" + amountNeeded * 2);
+	                    }
+	                    $tableRow.append(tableMonth);
+	                    $tableRow.append(tableSaved);
+	                    $tableRow.append(tableLeft);
+	                    $(table6).append(tableRow);
+	                }
+
+
+	                $('#error').slideUp();
+	                $('#alreadySaved').slideUp();
+	                $('#normalCase').slideDown();
+	                $('#resultsWrapper').slideDown();
+	            } else {
+	                $('#resultsWrapper').slideUp();
+	                $('#alreadySaved').hide();
+	                $('#error').slideDown();
+	            }
+
+	            if(parseInt($('#currentlySaved').val()) !== 0){
+	            	$('#checklistWrapper').slideDown();
+	            	$('#amountSaved').text($('#currentlySaved').val());
+	            	$('#amountLeftFor3').text(amountNeeded);
+	            	$('#amountLeftFor6').text(amountNeeded*2);
+	            	$('#amountSavedWrapper').slideDown();
+	            } else {
+	            	$('#checklistWrapper').slideUp();
+	            	$('#amountSavedWrapper').slideUp();
+	            }
+	            $('#normalCase').slideDown();
+	           }
+        });
+
+        var $text = $('input[type="text"]');
+        $text.on('input', function() {
+            var name = this.getAttribute("id");
+            var value = $(this).val();
+            if (value === "") {
+                value = 0;
+            }
+            $("#" + name + "Slider").val(value).change();
+        });
+
+    </script>
+</body>
+
+</html>
